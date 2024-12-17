@@ -23,6 +23,7 @@
 #include "pxr/base/tf/staticData.h"
 #include "pxr/base/tf/staticTokens.h"
 #include "pxr/base/tf/ostreamMethods.h"
+#include "pxr/base/tf/fileUtils.h"
 #include <Alembic/Abc/ArchiveInfo.h>
 #include <Alembic/Abc/IArchive.h>
 #include <Alembic/Abc/IObject.h>
@@ -881,18 +882,22 @@ _ReaderContext::_ReaderContext() :
 std::string
 _ReaderContext::_OpenAndGetMappedFilePath(const std::string& filePath)
 {
-    // Open asset with Ar to support URLs other than local paths.
-    std::shared_ptr<ArAsset> asset =
-        ArGetResolver().OpenAsset(ArResolvedPath(filePath));
-    if (asset)
+    // Return as it is if it's a local path and not a symlink.
+    if (!TfIsFile(filePath))
     {
-        FILE* fileHandle = asset->GetFileUnsafe().first;
-        if (fileHandle)
+        // Open asset with Ar to support URLs other than local paths.
+        std::shared_ptr<ArAsset> asset =
+            ArGetResolver().OpenAsset(ArResolvedPath(filePath));
+        if (asset)
         {
-            // If file handle is presented, use mapped file path instead of original one.
-            const std::string mappedFilePath = ArchGetFileName(fileHandle);
+            FILE* fileHandle = asset->GetFileUnsafe().first;
+            if (fileHandle)
+            {
+                // If file handle is presented, use mapped file path instead of original one.
+                const std::string mappedFilePath = ArchGetFileName(fileHandle);
 
-            return mappedFilePath;
+                return mappedFilePath;
+            }
         }
     }
 
