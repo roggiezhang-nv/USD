@@ -860,6 +860,8 @@ private:
     _PrimMap _prims;
     Prim* _pseudoRoot;
     UsdAbc_TimeSamples _allTimeSamples;
+
+    std::vector<std::shared_ptr<ArAsset>> _assetHolders;
 };
 
 static
@@ -895,6 +897,7 @@ _ReaderContext::_OpenAndGetMappedFilePath(const std::string& filePath)
             {
                 // If file handle is presented, use mapped file path instead of original one.
                 const std::string mappedFilePath = ArchGetFileName(fileHandle);
+                _assetHolders.emplace_back(std::move(asset));
 
                 return mappedFilePath;
             }
@@ -1540,6 +1543,7 @@ _ReaderContext::_Clear()
     _allTimeSamples.clear();
     _instanceSources.clear();
     _instances.clear();
+    _assetHolders.clear();
 }
 
 const _ReaderContext::Prim*
