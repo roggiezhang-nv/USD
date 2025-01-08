@@ -861,6 +861,8 @@ private:
     Prim* _pseudoRoot;
     UsdAbc_TimeSamples _allTimeSamples;
 
+    // Asset holders to keep a reference alive so that resolver doesn't 
+    // attempt to cleanup asset until the asset is no longer in use.
     std::vector<std::shared_ptr<ArAsset>> _assetHolders;
 };
 
@@ -884,8 +886,8 @@ _ReaderContext::_ReaderContext() :
 std::string
 _ReaderContext::_OpenAndGetMappedFilePath(const std::string& filePath)
 {
-    // Return as it is if it's a local path and not a symlink.
-    if (!TfIsFile(filePath))
+    // Return as it is if it's a local path or symlink.
+    if (!TfIsFile(filePath, true))
     {
         // Open asset with Ar to support URLs other than local paths.
         std::shared_ptr<ArAsset> asset =
@@ -893,7 +895,7 @@ _ReaderContext::_OpenAndGetMappedFilePath(const std::string& filePath)
         if (asset)
         {
             FILE* fileHandle = asset->GetFileUnsafe().first;
-            if (fileHandle)
+            if (fileHandle && ftell(fileHandle) == 0)
             {
                 // If file handle is presented, use mapped file path instead of original one.
                 const std::string mappedFilePath = ArchGetFileName(fileHandle);
