@@ -894,8 +894,11 @@ _ReaderContext::_OpenAndGetMappedFilePath(const std::string& filePath)
             ArGetResolver().OpenAsset(ArResolvedPath(filePath));
         if (asset)
         {
-            FILE* fileHandle = asset->GetFileUnsafe().first;
-            if (fileHandle && ftell(fileHandle) == 0)
+            FILE* fileHandle; size_t fileOffset;
+            std::tie(fileHandle, fileOffset) = asset->GetFileUnsafe();
+            // Check file offset also to ensure that the .abc file
+            // we're looking at isn't embedded in a .usdz or other package
+            if (fileHandle && fileOffset == 0)
             {
                 // If file handle is presented, use mapped file path instead of original one.
                 const std::string mappedFilePath = ArchGetFileName(fileHandle);
